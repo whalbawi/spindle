@@ -1,23 +1,23 @@
-#ifndef SKELETON_VERSION_H_
-#define SKELETON_VERSION_H_
+#ifndef SPINDLE_VERSION_H_
+#define SPINDLE_VERSION_H_
 
-namespace skeleton {
+namespace spindle {
 
 namespace {
 
-#cmakedefine SKELETON_PROJECT_VERSION "@SKELETON_PROJECT_VERSION@"
-#cmakedefine SKELETON_GIT_COMMIT_HASH "@SKELETON_GIT_COMMIT_HASH@"
+#cmakedefine SPINDLE_PROJECT_VERSION "@SPINDLE_PROJECT_VERSION@"
+#cmakedefine SPINDLE_GIT_COMMIT_HASH "@SPINDLE_GIT_COMMIT_HASH@"
 
 } // namespace
 
 std::string version() {
-    return SKELETON_PROJECT_VERSION;
+    return SPINDLE_PROJECT_VERSION;
 }
 
 std::string git_commit_hash() {
-    return SKELETON_GIT_COMMIT_HASH;
+    return SPINDLE_GIT_COMMIT_HASH;
 }
 
-} // namespace skeleton
+} // namespace spindle
 
-#endif // SKELETON_VERSION_H_
+#endif // SPINDLE_VERSION_H_
