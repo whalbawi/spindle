@@ -37,11 +37,13 @@ configure_file(${SPINDLE_SRC_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/gen/v
 # Source files
 set(SPINDLE_SRC_LIST
     ${SPINDLE_SRC_DIR}/spindle.cpp
+    ${SPINDLE_SRC_DIR}/worker.cpp
 )
 
 # Test files
 set(SPINDLE_TEST_LIST
     ${SPINDLE_TEST_DIR}/spindle_test.cpp
+    ${SPINDLE_TEST_DIR}/worker_test.cpp
 )
 
 add_library(spindle-lib ${SPINDLE_SRC_LIST})
