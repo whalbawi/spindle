@@ -36,13 +36,17 @@ configure_file(${SPINDLE_SRC_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/gen/v
 
 # Source files
 set(SPINDLE_SRC_LIST
+    ${SPINDLE_SRC_DIR}/latch.cpp
     ${SPINDLE_SRC_DIR}/spindle.cpp
+    ${SPINDLE_SRC_DIR}/thread_pool.cpp
     ${SPINDLE_SRC_DIR}/worker.cpp
 )
 
 # Test files
 set(SPINDLE_TEST_LIST
+    ${SPINDLE_TEST_DIR}/latch_test.cpp
     ${SPINDLE_TEST_DIR}/spindle_test.cpp
+    ${SPINDLE_TEST_DIR}/thread_pool_test.cpp
     ${SPINDLE_TEST_DIR}/worker_test.cpp
 )
 
