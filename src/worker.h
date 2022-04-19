@@ -20,9 +20,9 @@ class Worker {
     void terminate();
 
   private:
-    std::queue<std::function<void()>> work{};
-    std::mutex m{};
-    std::condition_variable cv{};
+    std::queue<std::function<void()>> work;
+    std::mutex m;
+    std::condition_variable cv;
     bool terminated{};
 };
 

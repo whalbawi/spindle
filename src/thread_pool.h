@@ -33,7 +33,7 @@ class ThreadPool {
   private:
     std::vector<std::unique_ptr<Worker>> workers;
     std::vector<std::thread> worker_threads;
-    std::atomic_int next_worker{};
+    std::atomic_int next_worker;
 };
 
 } // namespace spindle
