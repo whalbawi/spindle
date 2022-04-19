@@ -8,12 +8,15 @@ enable_testing()
 # Directories
 set(SPINDLE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(SPINDLE_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test)
+set(SPINDLE_BENCHMARK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bench)
 
 set(SPINDLE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 set(SPINDLE_GOOGLETEST_DIR ${SPINDLE_THIRD_PARTY_DIR}/googletest)
+set(SPINDLE_GOOGLEBENCHMARK_DIR ${SPINDLE_THIRD_PARTY_DIR}/benchmark)
 
 # Dependencies
 add_subdirectory(${SPINDLE_GOOGLETEST_DIR} EXCLUDE_FROM_ALL)
+add_subdirectory(${SPINDLE_GOOGLEBENCHMARK_DIR} EXCLUDE_FROM_ALL)
 
 # Project version
 file(READ VERSION SPINDLE_PROJECT_VERSION)
@@ -42,6 +45,10 @@ set(SPINDLE_SRC_LIST
     ${SPINDLE_SRC_DIR}/worker.cpp
 )
 
+set(SPINDLE_BENCHMARK_LIST
+    ${SPINDLE_BENCHMARK_DIR}/thread_pool_bench.cpp
+)
+
 # Test files
 set(SPINDLE_TEST_LIST
     ${SPINDLE_TEST_DIR}/latch_test.cpp
@@ -59,3 +66,9 @@ target_include_directories(spindle-tests PRIVATE ${SPINDLE_SRC_DIR})
 target_link_libraries(spindle-tests spindle-lib gtest_main)
 
 add_test(unit-tests spindle-tests)
+
+add_executable(spindle-benchmarks ${SPINDLE_BENCHMARK_LIST})
+target_include_directories(spindle-benchmarks PRIVATE ${SPINDLE_SRC_DIR})
+target_link_libraries(spindle-benchmarks spindle-lib benchmark_main)
+
+add_test(spindle-benchmarks spindle-benchmarks)
