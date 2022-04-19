@@ -20,8 +20,8 @@ void Latch::decrement() {
         std::lock_guard<std::mutex> lk{m};
         // Prevent potential underflow of `weight`.
         if (weight == 0 || --weight > 0) return;
+        cv.notify_all();
     }
-    cv.notify_all();
 }
 
 void Latch::wait() {
