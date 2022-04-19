@@ -24,8 +24,8 @@ bool Worker::enqueue(const std::function<void()>& task) {
         std::lock_guard<std::mutex> lk(m);
         if (terminated) return false;
         work.emplace(task);
+        cv.notify_one();
     }
-    cv.notify_one();
 
     return true;
 }
@@ -35,8 +35,8 @@ void Worker::terminate() {
         std::lock_guard<std::mutex> lk(m);
         if (terminated) return;
         terminated = true;
+        cv.notify_one();
     }
-    cv.notify_one();
 }
 
 } // namespace spindle
