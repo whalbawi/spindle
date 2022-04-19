@@ -16,12 +16,10 @@ Latch::Latch(uint32_t weight) : weight(weight) {
 }
 
 void Latch::decrement() {
-    {
-        std::lock_guard<std::mutex> lk{m};
-        // Prevent potential underflow of `weight`.
-        if (weight == 0 || --weight > 0) return;
-        cv.notify_all();
-    }
+    std::lock_guard<std::mutex> lk{m};
+    // Prevent potential underflow of `weight`.
+    if (weight == 0 || --weight > 0) return;
+    cv.notify_all();
 }
 
 void Latch::wait() {

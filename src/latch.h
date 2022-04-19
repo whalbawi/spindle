@@ -27,9 +27,9 @@ class Latch {
     void wait();
 
   private:
-    std::condition_variable cv{};
-    std::mutex m{};
-    uint32_t weight;
+    std::condition_variable cv;
+    std::mutex m;
+    uint32_t weight{};
 };
 
 } // namespace spindle

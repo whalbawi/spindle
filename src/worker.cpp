@@ -9,7 +9,6 @@ void Worker::run() {
 
         cv.wait(lk, [this] { return terminated || !work.empty(); });
         if (terminated) return;
-        if (work.empty()) continue; // Spurious notification
 
         task = work.front();
         work.pop();
@@ -20,23 +19,19 @@ void Worker::run() {
 }
 
 bool Worker::enqueue(const std::function<void()>& task) {
-    {
-        std::lock_guard<std::mutex> lk(m);
-        if (terminated) return false;
-        work.emplace(task);
-        cv.notify_one();
-    }
+    std::lock_guard<std::mutex> lk(m);
+    if (terminated) return false;
+    work.emplace(task);
+    cv.notify_one();
 
     return true;
 }
 
 void Worker::terminate() {
-    {
-        std::lock_guard<std::mutex> lk(m);
-        if (terminated) return;
-        terminated = true;
-        cv.notify_one();
-    }
+    std::lock_guard<std::mutex> lk(m);
+    if (terminated) return;
+    terminated = true;
+    cv.notify_one();
 }
 
 } // namespace spindle
