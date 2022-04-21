@@ -21,7 +21,12 @@ jobs:
     - name: Configure CMake
       env:
         BUILD_TYPE: Release
-      run: cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -B ${{github.workspace}}/build
+        # Do not run deferred task tests on macOS. Performance is bad so the results are unpredictable.
+        SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP: ${{ runner.os == 'macOS' }}
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+              -DSPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP=${SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP} \
+              -B ${{github.workspace}}/build
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build
