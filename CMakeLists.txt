@@ -57,6 +57,10 @@ set(SPINDLE_TEST_LIST
     ${SPINDLE_TEST_DIR}/worker_test.cpp
 )
 
+if (NOT DEFINED SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP)
+    option(SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP "Skip worker deferred task tests" OFF)
+endif()
+
 add_library(spindle-lib ${SPINDLE_SRC_LIST})
 target_include_directories(spindle-lib PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/gen)
 set_target_properties(spindle-lib PROPERTIES OUTPUT_NAME spindle)
@@ -64,6 +68,9 @@ set_target_properties(spindle-lib PROPERTIES OUTPUT_NAME spindle)
 add_executable(spindle-tests ${SPINDLE_TEST_LIST})
 target_include_directories(spindle-tests PRIVATE ${SPINDLE_SRC_DIR})
 target_link_libraries(spindle-tests spindle-lib gtest_main)
+if (SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP)
+    target_compile_definitions(spindle-tests PRIVATE SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP=1)
+endif()
 
 add_test(unit-tests spindle-tests)
 
