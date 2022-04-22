@@ -31,6 +31,18 @@ void ThreadPool::execute(const std::function<void()>& task) {
     workers[idx]->enqueue(task);
 }
 
+void ThreadPool::drain() {
+    for (auto&& worker : workers) {
+        worker->drain();
+    }
+
+    for (auto&& thread : worker_threads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+}
+
 void ThreadPool::tear_down() {
     for (auto&& worker : workers) {
         worker->terminate();
