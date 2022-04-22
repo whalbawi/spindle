@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 
 TEST(Latch, InvalidWeight) {
-    EXPECT_THROW(spindle::Latch latch{0}, std::runtime_error);
+    EXPECT_THROW(spindle::Latch{0}, std::runtime_error);
 }
 
 TEST(Latch, WeightOne) {

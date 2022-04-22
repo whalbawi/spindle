@@ -6,9 +6,9 @@
 #define SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP 0
 #endif
 
-class WorkerSingleThreadedTest : public ::testing::Test {
+class WorkerTest : public ::testing::Test {
   protected:
-    WorkerSingleThreadedTest() : terminator(worker) {}
+    WorkerTest() : terminator(worker) {}
 
     bool enqueue(const std::function<void()>& task) {
         terminator.add_task();
@@ -55,9 +55,9 @@ class WorkerSingleThreadedTest : public ::testing::Test {
     static long delay_tol_pct;
 };
 
-long WorkerSingleThreadedTest::delay_tol_pct = 10; // Being with 10% and tweak as we improve.
+long WorkerTest::delay_tol_pct = 10; // Being with 10% and tweak as we improve.
 
-TEST_F(WorkerSingleThreadedTest, EnqueueAndTerminate) {
+TEST_F(WorkerTest, EnqueueAndTerminate) {
     int x = 0;
     auto task = [&] { x = 1; };
 
@@ -70,7 +70,7 @@ TEST_F(WorkerSingleThreadedTest, EnqueueAndTerminate) {
     ASSERT_EQ(enqueue(task), false);
 }
 
-TEST_F(WorkerSingleThreadedTest, EnqueueMultipleTasks) {
+TEST_F(WorkerTest, EnqueueMultipleTasks) {
     int x = 0;
     int y = 0;
     int z = 0;
@@ -94,7 +94,7 @@ TEST_F(WorkerSingleThreadedTest, EnqueueMultipleTasks) {
     ASSERT_EQ(enqueue(task1), false);
 }
 
-TEST_F(WorkerSingleThreadedTest, EnqueueFromEnqueuedTask) {
+TEST_F(WorkerTest, EnqueueFromEnqueuedTask) {
     int x = 0;
     auto inner_task = [&] { x = 1; };
     auto outer_task = [&] { enqueue(inner_task); };
@@ -109,7 +109,7 @@ TEST_F(WorkerSingleThreadedTest, EnqueueFromEnqueuedTask) {
     ASSERT_EQ(enqueue(outer_task), false);
 }
 
-TEST_F(WorkerSingleThreadedTest, DeferredTask) {
+TEST_F(WorkerTest, DeferredTask) {
 #if SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP
     GTEST_SKIP();
 #endif
@@ -126,7 +126,7 @@ TEST_F(WorkerSingleThreadedTest, DeferredTask) {
     ASSERT_NEAR(delay.count(), delay_ms.count(), tol);
 }
 
-TEST_F(WorkerSingleThreadedTest, ImmediateAndDeferredTask) {
+TEST_F(WorkerTest, ImmediateAndDeferredTask) {
 #if SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP
     GTEST_SKIP();
 #endif
@@ -156,7 +156,7 @@ TEST_F(WorkerSingleThreadedTest, ImmediateAndDeferredTask) {
     worker.run();
 }
 
-TEST_F(WorkerSingleThreadedTest, MultipleDeferredTasks) {
+TEST_F(WorkerTest, MultipleDeferredTasks) {
 #if SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP
     GTEST_SKIP();
 #endif
@@ -186,7 +186,7 @@ TEST_F(WorkerSingleThreadedTest, MultipleDeferredTasks) {
     worker.run();
 }
 
-TEST_F(WorkerSingleThreadedTest, MultipleDeferredAndImmediateTasks) {
+TEST_F(WorkerTest, MultipleDeferredAndImmediateTasks) {
 #if SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP
     GTEST_SKIP();
 #endif
@@ -245,7 +245,7 @@ TEST_F(WorkerSingleThreadedTest, MultipleDeferredAndImmediateTasks) {
     worker.run();
 }
 
-TEST_F(WorkerSingleThreadedTest, RecursiveDeferredTasks) {
+TEST_F(WorkerTest, RecursiveDeferredTasks) {
 #if SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP
     GTEST_SKIP();
 #endif
@@ -281,7 +281,7 @@ TEST_F(WorkerSingleThreadedTest, RecursiveDeferredTasks) {
     worker.run();
 }
 
-TEST_F(WorkerSingleThreadedTest, PeriodicDeferredTask) {
+TEST_F(WorkerTest, PeriodicDeferredTask) {
 #if SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP
     GTEST_SKIP();
 #endif

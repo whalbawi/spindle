@@ -7,6 +7,8 @@
 #include <mutex>
 #include <queue>
 
+#include "latch.h"
+
 namespace spindle {
 
 using clock = std::chrono::high_resolution_clock;
@@ -26,8 +28,11 @@ class Worker {
     // Schedules a task for deferred execution.
     template <class T>
     bool schedule(const std::function<void()>& task, T delay, bool periodic = false);
-    // Terminates the `Worker`. From this point onwards, the `Worker` will not reject new tasks
-    // but will continue executing any inflight task.
+    // Drains the task queue. From this point onwards, the `Worker` will reject new tasks but will
+    // continue executing any inflight task.
+    void drain();
+    // Terminates the `Worker`. From this point onwards, the `Worker` will reject new tasks but will
+    // continue executing any inflight task.
     void terminate();
 
   private:
@@ -39,6 +44,8 @@ class Worker {
     std::condition_variable_any cv;
     clock::time_point deadline;
     bool terminated{};
+    bool draining{};
+    Latch drain_latch{};
 };
 
 class DeferredTask {

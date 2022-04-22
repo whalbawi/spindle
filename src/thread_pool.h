@@ -27,6 +27,10 @@ class ThreadPool {
     // method concurrently with `ThreadPool::tear_down` does not guarantee execution of the task.
     void execute(const std::function<void()>& task);
 
+    // Puts the `ThreadPool` in a state that prevents scheduling further tasks, and then blocks
+    // until all inflight and queued tasks are executed.
+    void drain();
+
     // Identical to the destructor.
     void tear_down();
 

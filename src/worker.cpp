@@ -12,6 +12,7 @@ void Worker::run() {
         bool deferred_task_due = false;
         // Wait until:
         // - Terminated
+        // - Draining
         // - There is a deferred task due to run
         // - There is a task to run
         // - `cv` times out
@@ -21,12 +22,12 @@ void Worker::run() {
         cv.wait_until(lk, deadline, [this, &deferred_task_due] {
             clock::time_point now = clock::now();
             deferred_task_due = !deferred_work.empty() && (now > deferred_work.top().deadline);
-            return terminated || deferred_task_due || !work.empty();
+            return terminated || draining || deferred_task_due || !work.empty();
         });
 
         if (terminated) return;
 
-        if (deferred_task_due) {
+        if (deferred_task_due && !draining) {
             // Enqueue the task for execution and reset `deadline` if there's deferred work
             // remaining
             DeferredTask deferred_task = deferred_work.top();
@@ -41,7 +42,14 @@ void Worker::run() {
             // and go on to check if there's a task to execute.
         }
 
-        if (work.empty()) continue;
+        if (work.empty()) {
+            if (draining) {
+                drain_latch.decrement();
+                return;
+            }
+            continue;
+        }
+
         task = work.front();
         work.pop();
         lk.unlock();
@@ -57,6 +65,16 @@ bool Worker::enqueue(const std::function<void()>& task) {
     cv.notify_one();
 
     return true;
+}
+
+void Worker::drain() {
+    {
+        std::lock_guard<std::recursive_mutex> lk{m};
+        if (draining) return;
+        draining = true;
+        cv.notify_one();
+    }
+    drain_latch.wait();
 }
 
 void Worker::terminate() {
