@@ -196,7 +196,6 @@ TEST_F(WorkerSingleThreadedTest, MultipleDeferredAndImmediateTasks) {
     std::chrono::milliseconds delay_2_ms{150};
     std::chrono::milliseconds delay_3_ms{100};
 
-    // ASSERT_FALSE(true);
     spindle::clock::time_point start = spindle::clock::now();
     // Position 1
     enqueue([&] {
@@ -280,4 +279,29 @@ TEST_F(WorkerSingleThreadedTest, RecursiveDeferredTasks) {
         },
         delay_1_ms);
     worker.run();
+}
+
+TEST_F(WorkerSingleThreadedTest, PeriodicDeferredTask) {
+#if SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP
+    GTEST_SKIP();
+#endif
+
+    int num_iters = 5;
+    int x = 0;
+    std::chrono::milliseconds delay_ms{100};
+    spindle::clock::time_point start = spindle::clock::now();
+    worker.schedule(
+        [&x, &start, delay_ms, num_iters, this] {
+            x++;
+            std::chrono::milliseconds delay = duration_since(start);
+            long tol = delay_ms.count() * delay_tol_pct / 100;
+            ASSERT_NEAR(delay.count(), delay_ms.count(), tol);
+            if (x == num_iters) worker.terminate();
+            start = spindle::clock::now();
+        },
+        delay_ms,
+        true);
+
+    worker.run();
+    ASSERT_EQ(x, num_iters);
 }

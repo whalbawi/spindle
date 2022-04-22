@@ -2,38 +2,46 @@
 
 namespace spindle {
 
+Worker::Worker() : deferred_work{DeferredTask::cmp}, deadline{clock::time_point::max()} {}
+
 void Worker::run() {
     for (;;) {
         std::function<void()> task;
-        std::unique_lock<std::mutex> lk{m};
+        std::unique_lock<std::recursive_mutex> lk{m};
 
-        bool sched_task_due{};
+        bool deferred_task_due = false;
         // Wait until:
         // - Terminated
-        // - There is a scheduled task due to run
+        // - There is a deferred task due to run
         // - There is a task to run
         // - `cv` times out
 
         // Note: `cv` will never time out with the predicate evaluating to false. This is because
-        //       The deadline is set if and only if there is scheduled work due.
-        cv.wait_until(lk, deadline, [this, &sched_task_due] {
+        //       the deadline is set if and only if there is a deferred task due to run.
+        cv.wait_until(lk, deadline, [this, &deferred_task_due] {
             clock::time_point now = clock::now();
-            sched_task_due = !sched_work.empty() && (now > sched_work.top().first);
-            return terminated || sched_task_due || !work.empty();
+            deferred_task_due = !deferred_work.empty() && (now > deferred_work.top().deadline);
+            return terminated || deferred_task_due || !work.empty();
         });
 
         if (terminated) return;
 
-        if (sched_task_due) {
-            // Enqueue the task for execution and reset `deadline` if there's scheduled work
+        if (deferred_task_due) {
+            // Enqueue the task for execution and reset `deadline` if there's deferred work
             // remaining
-            work.push(sched_work.top().second);
-            sched_work.pop();
-            deadline = sched_work.empty() ? clock::time_point::max() : sched_work.top().first;
-            sched_task_due = false;
-            continue;
+            DeferredTask deferred_task = deferred_work.top();
+            deferred_work.pop();
+            work.push(deferred_task.task);
+            deadline =
+                deferred_work.empty() ? clock::time_point::max() : deferred_work.top().deadline;
+            // Re-schedule the task if it is periodic
+            if (deferred_task.periodic) {
+                schedule(deferred_task.task, deferred_task.delay, deferred_task.periodic);
+            }
+            // and go on to check if there's a task to execute.
         }
 
+        if (work.empty()) continue;
         task = work.front();
         work.pop();
         lk.unlock();
@@ -43,7 +51,7 @@ void Worker::run() {
 }
 
 bool Worker::enqueue(const std::function<void()>& task) {
-    std::lock_guard<std::mutex> lk{m};
+    std::lock_guard<std::recursive_mutex> lk{m};
     if (terminated) return false;
     work.emplace(task);
     cv.notify_one();
@@ -52,10 +60,21 @@ bool Worker::enqueue(const std::function<void()>& task) {
 }
 
 void Worker::terminate() {
-    std::lock_guard<std::mutex> lk{m};
+    std::lock_guard<std::recursive_mutex> lk{m};
     if (terminated) return;
     terminated = true;
     cv.notify_one();
 }
+
+// Sort in ascending order of execution time.
+DeferredWorkCmp DeferredTask::cmp = [](const DeferredTask& x, const DeferredTask& y) {
+    return x.deadline > y.deadline;
+};
+
+DeferredTask::DeferredTask(std::function<void()> task,
+                           clock::time_point deadline,
+                           bool periodic,
+                           clock::duration delay)
+    : task(std::move(task)), deadline(deadline), periodic(periodic), delay(delay) {}
 
 } // namespace spindle
