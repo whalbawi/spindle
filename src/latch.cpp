@@ -1,4 +1,4 @@
-#include "latch.h"
+#include "spindle/latch.h"
 
 #include <sstream>
 #include <stdexcept>

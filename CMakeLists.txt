@@ -7,6 +7,7 @@ enable_testing()
 
 # Directories
 set(SPINDLE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(SPINDLE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(SPINDLE_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test)
 set(SPINDLE_BENCHMARK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bench)
 
@@ -62,7 +63,7 @@ if (NOT DEFINED SPINDLE_WORKER_DEFERRED_TASK_TESTS_SKIP)
 endif()
 
 add_library(spindle-lib ${SPINDLE_SRC_LIST})
-target_include_directories(spindle-lib PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/gen)
+target_include_directories(spindle-lib PUBLIC ${SPINDLE_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/gen)
 set_target_properties(spindle-lib PROPERTIES OUTPUT_NAME spindle)
 
 add_executable(spindle-tests ${SPINDLE_TEST_LIST})
@@ -75,7 +76,6 @@ endif()
 add_test(unit-tests spindle-tests)
 
 add_executable(spindle-benchmarks ${SPINDLE_BENCHMARK_LIST})
-target_include_directories(spindle-benchmarks PRIVATE ${SPINDLE_SRC_DIR})
 target_link_libraries(spindle-benchmarks spindle-lib benchmark_main)
 
 add_test(spindle-benchmarks spindle-benchmarks)

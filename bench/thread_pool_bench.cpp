@@ -1,6 +1,6 @@
-#include "thread_pool.h"
+#include "spindle/thread_pool.h"
 
-#include "latch.h"
+#include "spindle/latch.h"
 
 #include "benchmark/benchmark.h"
 

@@ -7,7 +7,7 @@
 #include <mutex>
 #include <queue>
 
-#include "latch.h"
+#include "spindle/latch.h"
 
 namespace spindle {
 

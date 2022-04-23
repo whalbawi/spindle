@@ -1,9 +1,9 @@
-#include "thread_pool.h"
+#include "spindle/thread_pool.h"
 
 #include <thread>
 #include <vector>
 
-#include "latch.h"
+#include "spindle/latch.h"
 
 #include "gtest/gtest.h"
 
