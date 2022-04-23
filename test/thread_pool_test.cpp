@@ -18,7 +18,6 @@ TEST_F(ThreadPoolTest, ZeroThreads) {
 
 TEST_F(ThreadPoolTest, OneTask) {
     int x = 0;
-    spindle::Latch latch{};
 
     thread_pool.execute([&] {
         x = 1;
@@ -31,7 +30,6 @@ TEST_F(ThreadPoolTest, OneTask) {
 TEST_F(ThreadPoolTest, SingleThreadManyTasks) {
     uint32_t task_count = 1024;
     std::vector<uint32_t> x(task_count);
-    spindle::Latch latch{task_count};
 
     for (int i = 0; i < task_count; ++i) {
         thread_pool.execute([&, i] {
@@ -93,15 +91,15 @@ TEST_F(ThreadPoolTest, MultipleThreadsManyTasksRecursiveSchedule) {
     uint32_t tasks_per_thread = 2048;
     uint32_t task_count = tasks_per_thread * thread_count;
     std::vector<std::thread> threads(thread_count);
-    spindle::Latch latch{thread_count};
+    spindle::Latch latch{task_count};
     std::vector<uint32_t> x(task_count);
     std::vector<uint32_t> y(task_count);
 
     auto inner_task = [&](uint32_t pos) {
         thread_pool.execute([&, pos] {
             y[pos] = 2 * pos;
-            latch.decrement();
         });
+        latch.decrement();
     };
     auto task = [&](uint32_t pos) {
         x[pos] = pos;
