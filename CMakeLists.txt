@@ -10,6 +10,7 @@ set(SPINDLE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(SPINDLE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(SPINDLE_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test)
 set(SPINDLE_BENCHMARK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bench)
+set(SPINDLE_EXAMPLES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/examples)
 
 set(SPINDLE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 set(SPINDLE_GOOGLETEST_DIR ${SPINDLE_THIRD_PARTY_DIR}/googletest)
@@ -47,6 +48,7 @@ set(SPINDLE_SRC_LIST
 )
 
 set(SPINDLE_BENCHMARK_LIST
+    ${SPINDLE_BENCHMARK_DIR}/primes_bench.cpp
     ${SPINDLE_BENCHMARK_DIR}/thread_pool_bench.cpp
 )
 
@@ -64,6 +66,7 @@ endif()
 
 add_library(spindle-lib ${SPINDLE_SRC_LIST})
 target_include_directories(spindle-lib PUBLIC ${SPINDLE_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/gen)
+target_link_libraries(spindle-lib PUBLIC pthread)
 set_target_properties(spindle-lib PROPERTIES OUTPUT_NAME spindle)
 
 add_executable(spindle-tests ${SPINDLE_TEST_LIST})
@@ -79,3 +82,6 @@ add_executable(spindle-benchmarks ${SPINDLE_BENCHMARK_LIST})
 target_link_libraries(spindle-benchmarks spindle-lib benchmark_main)
 
 add_test(spindle-benchmarks spindle-benchmarks)
+
+add_executable(spindle-primes ${SPINDLE_EXAMPLES_DIR}/primes.cpp)
+target_link_libraries(spindle-primes spindle-lib)
