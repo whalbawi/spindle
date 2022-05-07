@@ -10,16 +10,7 @@ class WorkerTest : public ::testing::Test {
   protected:
     WorkerTest() : terminator(worker) {}
 
-    bool enqueue(const std::function<void()>& task) {
-        terminator.add_task();
-        // TODO (whalbawi): Figure out why we need to capture `task` by value rather than reference.
-        return worker.enqueue([task, this] {
-            task();
-            terminator();
-        });
-    }
-
-    template <class T> bool schedule(const std::function<void()>& task, T delay) {
+    bool schedule(const std::function<void()>& task, std::chrono::milliseconds delay = {}) {
         terminator.add_task();
         // TODO (whalbawi): Figure out why we need to capture `task` by value rather than reference.
         return worker.schedule(
@@ -61,13 +52,13 @@ TEST_F(WorkerTest, EnqueueAndTerminate) {
     int x = 0;
     auto task = [&] { x = 1; };
 
-    ASSERT_EQ(enqueue(task), true);
+    ASSERT_EQ(schedule(task), true);
     ASSERT_EQ(x, 0); // Enqueuing does not run the task
 
     worker.run();
     ASSERT_EQ(x, 1);
 
-    ASSERT_EQ(enqueue(task), false);
+    ASSERT_EQ(schedule(task), false);
 }
 
 TEST_F(WorkerTest, EnqueueMultipleTasks) {
@@ -78,9 +69,9 @@ TEST_F(WorkerTest, EnqueueMultipleTasks) {
     auto task2 = [&] { y = 2; };
     auto task3 = [&] { z = 3; };
 
-    ASSERT_EQ(enqueue(task1), true);
-    ASSERT_EQ(enqueue(task2), true);
-    ASSERT_EQ(enqueue(task3), true);
+    ASSERT_EQ(schedule(task1), true);
+    ASSERT_EQ(schedule(task2), true);
+    ASSERT_EQ(schedule(task3), true);
     // Enqueuing does not run the task
     ASSERT_EQ(x, 0);
     ASSERT_EQ(y, 0);
@@ -91,22 +82,22 @@ TEST_F(WorkerTest, EnqueueMultipleTasks) {
     ASSERT_EQ(y, 2);
     ASSERT_EQ(z, 3);
 
-    ASSERT_EQ(enqueue(task1), false);
+    ASSERT_EQ(schedule(task1), false);
 }
 
 TEST_F(WorkerTest, EnqueueFromEnqueuedTask) {
     int x = 0;
     auto inner_task = [&] { x = 1; };
-    auto outer_task = [&] { enqueue(inner_task); };
+    auto outer_task = [&] { schedule(inner_task); };
 
-    ASSERT_EQ(enqueue(outer_task), true);
+    ASSERT_EQ(schedule(outer_task), true);
     // Enqueuing does not run the task
     ASSERT_EQ(x, 0);
 
     worker.run();
     ASSERT_EQ(x, 1);
 
-    ASSERT_EQ(enqueue(outer_task), false);
+    ASSERT_EQ(schedule(outer_task), false);
 }
 
 TEST_F(WorkerTest, DeferredTask) {
@@ -147,9 +138,9 @@ TEST_F(WorkerTest, ImmediateAndDeferredTask) {
         },
         delay_ms);
 
-    enqueue([&] {
+    schedule([&] {
         x++;
-        // Even though we enqueued this task second, it should execute first.
+        // Even though we scheduled this task second, it should execute first.
         ASSERT_EQ(x, 1);
     });
 
@@ -177,9 +168,9 @@ TEST_F(WorkerTest, MultipleDeferredTasks) {
         },
         delay_ms);
 
-    enqueue([&] {
+    schedule([&] {
         x += 1;
-        // Even though we enqueued this task second, it should execute first.
+        // Even though we scheduled this task second, it should execute first.
         ASSERT_EQ(x, 1);
     });
 
@@ -198,7 +189,7 @@ TEST_F(WorkerTest, MultipleDeferredAndImmediateTasks) {
 
     spindle::clock::time_point start = spindle::clock::now();
     // Position 1
-    enqueue([&] {
+    schedule([&] {
         x++;
         ASSERT_EQ(x, 1);
     });
@@ -213,7 +204,7 @@ TEST_F(WorkerTest, MultipleDeferredAndImmediateTasks) {
         },
         delay_1_ms);
     // Position 2
-    enqueue([&] {
+    schedule([&] {
         x++;
         ASSERT_EQ(x, 2);
     });
@@ -228,7 +219,7 @@ TEST_F(WorkerTest, MultipleDeferredAndImmediateTasks) {
         },
         delay_2_ms);
     // Position 3
-    enqueue([&] {
+    schedule([&] {
         x++;
         ASSERT_EQ(x, 3);
     });
@@ -255,7 +246,7 @@ TEST_F(WorkerTest, RecursiveDeferredTasks) {
     std::chrono::milliseconds delay_2_ms{150};
 
     spindle::clock::time_point start = spindle::clock::now();
-    enqueue([&] {
+    schedule([&] {
         x++;
         ASSERT_EQ(x, 1);
     });

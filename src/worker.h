@@ -13,9 +13,25 @@ namespace spindle {
 
 using clock = std::chrono::high_resolution_clock;
 
-class DeferredTask;
+class Worker;
 
-using DeferredWorkCmp = std::function<bool(const DeferredTask& x, const DeferredTask& y)>;
+class Task {
+  public:
+    Task(std::function<void()> func,
+         clock::duration delay,
+         bool periodic,
+         clock::time_point deadline);
+
+    friend Worker;
+
+  private:
+    using Cmp = std::function<bool(const Task& x, const Task& y)>;
+    static Cmp cmp;
+    std::function<void()> func;
+    clock::time_point deadline;
+    clock::duration delay;
+    bool periodic;
+};
 
 // `Worker` continuously executes tasks in a loop, until terminated.
 class Worker {
@@ -23,22 +39,19 @@ class Worker {
     Worker();
     // Continuously executes enqueued tasks until terminated.
     void run();
-    // Enqueues a task for execution.
-    bool enqueue(const std::function<void()>& task);
-    // Schedules a task for deferred execution.
-    template <class T>
-    bool schedule(const std::function<void()>& task, T delay, bool periodic = false);
-    // Drains the task queue. From this point onwards, the `Worker` will reject new tasks but will
-    // continue executing any inflight task.
+    // Schedules a task for execution.
+    template <class T = clock::duration>
+    bool schedule(const std::function<void()>& func, T delay = {}, bool periodic = false);
+    // Drains the `Worker`. From this point onwards, the `Worker` will reject new tasks but will
+    // continue executing the inflight task and the any tasks remaining in the work queue.
     void drain();
     // Terminates the `Worker`. From this point onwards, the `Worker` will reject new tasks but will
     // continue executing any inflight task.
     void terminate();
 
   private:
-    std::queue<std::function<void()>> work;
-    std::priority_queue<DeferredTask, std::vector<DeferredTask>, DeferredWorkCmp> deferred_work;
-    // Need a re-entrant mutex because `Worker::run` might call `Worker::schedule`.
+    std::priority_queue<Task, std::vector<Task>, Task::Cmp> work;
+    // Need a re-entrant mutex because `Worker::run` might call `Worker::do_schedule`.
     // TODO (whalbawi): Can we refactor `Worker::schedule` to avoid this?
     std::recursive_mutex m;
     std::condition_variable_any cv;
@@ -46,35 +59,14 @@ class Worker {
     bool terminated{};
     bool draining{};
     Latch drain_latch{};
-};
 
-class DeferredTask {
-  public:
-    DeferredTask(std::function<void()> task,
-                 clock::time_point deadline,
-                 bool periodic,
-                 clock::duration delay);
-
-    friend Worker;
-
-  private:
-    static std::function<bool(const DeferredTask& x, const DeferredTask& y)> cmp;
-    std::function<void()> task;
-    clock::time_point deadline;
-    bool periodic;
-    clock::duration delay;
+    bool do_schedule(const Task& task);
 };
 
 template <class T>
-bool Worker::schedule(const std::function<void()>& task, T delay, bool periodic) {
-    std::lock_guard<std::recursive_mutex> lk{m};
-    if (terminated) return false;
-    clock::time_point task_deadline = clock::now() + delay;
-    deferred_work.emplace(task, task_deadline, periodic, delay);
-    deadline = std::min(deadline, task_deadline);
-    cv.notify_one();
-
-    return true;
+bool Worker::schedule(const std::function<void()>& func, T delay, bool periodic) {
+    Task task{func, delay, periodic, clock::now() + delay};
+    return do_schedule(task);
 }
 
 } // namespace spindle

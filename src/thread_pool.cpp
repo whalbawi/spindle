@@ -28,7 +28,7 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::execute(const std::function<void()>& task) {
     uint32_t idx = next_worker++ % workers.size(); // No harm in overflowing.
-    workers[idx]->enqueue(task);
+    workers[idx]->schedule(task);
 }
 
 void ThreadPool::drain() {
