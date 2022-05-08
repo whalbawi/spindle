@@ -22,11 +22,13 @@ class Task {
          bool periodic,
          clock::time_point deadline);
 
+    // Sort in ascending order of execution time.
+    bool operator>(const Task& other) const;
+
     friend Worker;
 
   private:
-    using Cmp = std::function<bool(const Task& x, const Task& y)>;
-    static Cmp cmp;
+
     std::function<void()> func;
     clock::time_point deadline;
     clock::duration delay;
@@ -50,11 +52,9 @@ class Worker {
     void terminate();
 
   private:
-    std::priority_queue<Task, std::vector<Task>, Task::Cmp> work;
-    // Need a re-entrant mutex because `Worker::run` might call `Worker::do_schedule`.
-    // TODO (whalbawi): Can we refactor `Worker::schedule` to avoid this?
-    std::recursive_mutex m;
-    std::condition_variable_any cv;
+    std::priority_queue<Task, std::vector<Task>, std::greater<>> work{};
+    std::mutex m;
+    std::condition_variable cv;
     clock::time_point deadline;
     bool terminated{};
     bool draining{};
@@ -66,7 +66,13 @@ class Worker {
 template <class T>
 bool Worker::schedule(const std::function<void()>& func, T delay, bool periodic) {
     Task task{func, delay, periodic, clock::now() + delay};
-    return do_schedule(task);
+    std::lock_guard<std::mutex> lk{m};
+        if (do_schedule(task)) {
+            cv.notify_one();
+            return true;
+        }
+
+    return false;
 }
 
 } // namespace spindle
