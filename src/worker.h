@@ -28,7 +28,6 @@ class Task {
     friend Worker;
 
   private:
-
     std::function<void()> func;
     clock::time_point deadline;
     clock::duration delay;
@@ -67,10 +66,10 @@ template <class T>
 bool Worker::schedule(const std::function<void()>& func, T delay, bool periodic) {
     Task task{func, delay, periodic, clock::now() + delay};
     std::lock_guard<std::mutex> lk{m};
-        if (do_schedule(task)) {
-            cv.notify_one();
-            return true;
-        }
+    if (do_schedule(task)) {
+        cv.notify_one();
+        return true;
+    }
 
     return false;
 }
